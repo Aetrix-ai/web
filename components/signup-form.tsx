@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { apiClient, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,14 +18,17 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
   const router = useRouter();
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-
+    if (!name) {
+      toast.error("Please enter your name");
+      return;
+    }
     // Validation
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
 
-    if (password.length < 8) {
+    if (password.length < 6) {
       toast.error("Password must be at least 8 characters long");
       return;
     }
@@ -32,10 +36,10 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post("/signup", { email, password });
-      if (response.status === 200) {
+      const response = await apiClient.post("auth/signup", { name, email, password });
+      if (response.status === 201) {
         toast.success("Account created successfully!");
-        router.push("/");
+        router.push("/login");
       }
     } catch (err) {
       console.error("Signup failed", err);
@@ -46,9 +50,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
   }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden p-0">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" onSubmit={handleSubmit}>
+      <Card className="overflow-hidden p-0 max-h-[90vh]">
+        <CardContent className="grid p-0 md:grid-cols-2 h-full">
+          <form className="p-6 md:p-8 overflow-y-auto" onSubmit={handleSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-2xl font-bold">Create your account</h1>
@@ -57,10 +61,28 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                 </p>
               </div>
               <Field>
+                <FieldLabel htmlFor="name">Name</FieldLabel>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Your name"
+                  required
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
+                />
+              </Field>
+              <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input id="email" type="email" placeholder="m@example.com" required onChange={(e)=>{
-                  setEmail(e.target.value);
-                }} />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
+                />
                 <FieldDescription>
                   We&apos;ll use this to contact you. We will not share your email with anyone else.
                 </FieldDescription>
@@ -69,9 +91,14 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                 <Field className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" type="password" required onChange={(e)=>{
-                      setPassword(e.target.value);
-                    }} />
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                      }}
+                    />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
@@ -132,7 +159,13 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Already have an account? <a href="#">Sign in</a>
+                Already have an account?{" "}
+                <p
+                  onClick={() => router.push("/login")}
+                  className="inline cursor-pointer text-primary underline hover:text-primary/80"
+                >
+                  Sign up
+                </p>
               </FieldDescription>
             </FieldGroup>
           </form>
@@ -140,14 +173,11 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
             <img
               src="/placeholder.svg"
               alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>
         </CardContent>
       </Card>
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
     </div>
   );
 }

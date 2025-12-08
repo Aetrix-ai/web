@@ -26,11 +26,9 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script
+          // Default to light; only use dark if the user explicitly set it.
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{const theme=localStorage.getItem('theme');const
-             prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
-             if(theme==='dark'||(!theme&&prefersDark)){document.documentElement.classList.add('dark')}else
-              {document.documentElement.classList.remove('dark')}}catch(e){} })()`,
+            __html: `(function(){try{const theme=localStorage.getItem('theme');if(theme==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})()`,
           }}
         />
       </head>
