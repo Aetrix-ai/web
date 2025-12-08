@@ -13,8 +13,8 @@ import type { Activity } from "./types"
 export function RecentActivity({ activities }: { activities: Activity[] }) {
   const getIcon = (status: Activity['status']) => {
       switch(status) {
-          case 'done': return <CheckCircle2 className="size-4 text-emerald-500" />
-          case 'in-progress': return <Clock className="size-4 text-amber-500" />
+          case 'done': return <CheckCircle2 className="size-4 text-primary" />
+          case 'in-progress': return <Clock className="size-4 text-muted-foreground" />
           case 'draft': return <FileEdit className="size-4 text-muted-foreground" />
           default: return <Sparkles className="size-4" />
       }

@@ -11,7 +11,7 @@ import type { User } from "./types"
 export function UserDetails({ user }: { user: User }) {
   return (
     <Card className="overflow-hidden border-none shadow-md">
-      <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/5" />
+      <div className="h-32 bg-linear-to-r from-primary/20 to-primary/5" />
       <CardContent className="relative pt-0">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 -mt-12 px-2">
             <img src={user.avatar} alt="Profile picture" className="size-24 rounded-full border-4 border-background shadow-sm bg-background object-cover" />
