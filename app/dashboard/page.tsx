@@ -130,8 +130,8 @@ export default function DashboardPage() {
                 <div className="mt-2 text-3xl font-bold">{data?.achievements.length || 0}</div>
               </div>
               <div className="rounded-xl border bg-card p-6 shadow-sm">
-                <div className="text-sm font-medium text-muted-foreground">Profile Views</div>
-                <div className="mt-2 text-3xl font-bold">1,234</div>
+                <div className="text-sm font-medium text-muted-foreground">Deployed Sites</div>
+                <div className="mt-2 text-3xl font-bold">12</div>
               </div>
               <div className="rounded-xl border bg-card p-6 shadow-sm">
                 <div className="text-sm font-medium text-muted-foreground">Completion</div>
@@ -141,30 +141,33 @@ export default function DashboardPage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
               <RecentActivity activities={data?.activities || []} />
-              <div className="space-y-6">
-                 <div className="rounded-xl border bg-card p-6 shadow-sm">
-                    <h3 className="font-semibold mb-4">Quick Actions</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                            <FolderGit2 className="size-5 text-primary" />
-                            <span>Add Project</span>
-                        </Button>
-                        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                            <Trophy className="size-5 text-primary" />
-                            <span>Add Achievement</span>
-                        </Button>
-                        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                            <UserRound className="size-5 text-primary" />
-                            <span>Edit Profile</span>
-                        </Button>
-                        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                            <Settings className="size-5 text-primary" />
-                            <span>Settings</span>
-                        </Button>
-                    </div>
-                 </div>
+              <div className="rounded-xl border bg-card p-6 shadow-sm h-full flex flex-col">
+                <h3 className="font-semibold mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3 flex-1">
+                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
+                        <FolderGit2 className="size-5 text-primary" />
+                        <span>Add Project</span>
+                    </Button>
+                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
+                        <Trophy className="size-5 text-primary" />
+                        <span>Add Achievement</span>
+                    </Button>
+                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
+                        <UserRound className="size-5 text-primary" />
+                        <span>Edit Profile</span>
+                    </Button>
+                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
+                        <Settings className="size-5 text-primary" />
+                        <span>Settings</span>
+                    </Button>
+                </div>
               </div>
             </div>
+
+            <Button className="w-full py-8 text-lg font-semibold transition-all hover:shadow-md active:scale-[0.99]">
+                <Sparkles className="mr-2 size-6" />
+                Create Website
+            </Button>
           </div>
         )
       case "profile":

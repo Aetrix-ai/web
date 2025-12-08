@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -8,14 +10,59 @@ import {
 } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { SettingsItem } from "./types"
+import { useTheme } from "next-themes"
+import { Moon, Sun, Laptop } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function SettingsSection({ settings }: { settings: SettingsItem[] }) {
+  const { setTheme, theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold">Settings</h2>
         <p className="text-sm text-muted-foreground">Manage your account preferences.</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Customize the look and feel of the application.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex items-center gap-2">
+                <Button
+                    variant={theme === "light" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTheme("light")}
+                    className="gap-2"
+                >
+                    <Sun className="size-4" /> Light
+                </Button>
+                <Button
+                    variant={theme === "dark" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTheme("dark")}
+                    className="gap-2"
+                >
+                    <Moon className="size-4" /> Dark
+                </Button>
+                <Button
+                    variant={theme === "system" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTheme("system")}
+                    className="gap-2"
+                >
+                    <Laptop className="size-4" /> System
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
