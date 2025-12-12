@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, X, Image as ImageIcon } from "lucide-react";
+import { Loader2, X, Image as ImageIcon } from "lucide-react";
 import { IKContext, IKUpload } from "imagekitio-react";
 import { Image } from "@imagekit/react";
 
@@ -35,7 +35,7 @@ const achievementFormSchema = z.object({
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date",
   }),
-  images: z.array(z.string().url()).optional().default([]),
+  images: z.array(z.string().url()),
 });
 
 type AchievementFormValues = z.infer<typeof achievementFormSchema>;
@@ -234,7 +234,7 @@ export function AchievementDialog({
                   fileName="achievement-image.jpg"
                   tags={["achievement"]}
                   useUniqueFileName={true}
-                  validateFile={(file) => file.size < 5 * 1024 * 1024}
+                  validateFile={(file: any) => file.size < 5 * 1024 * 1024}
                   onUploadStart={() => setIsImageUploading(true)}
                   onSuccess={onSuccess}
                   onError={onError}

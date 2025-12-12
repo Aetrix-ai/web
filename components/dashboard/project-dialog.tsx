@@ -36,8 +36,8 @@ const projectFormSchema = z.object({
   repoLink: z.string().url().optional().or(z.literal("")),
   techStack: z.string().optional(),
   additionalInfo: z.string().max(1000).optional(),
-  images: z.array(z.string().url()).optional().default([]),
-  videos: z.array(z.string().url()).optional().default([]),
+  images: z.array(z.string().url()),
+  videos: z.array(z.string().url()),
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -263,10 +263,10 @@ export function ProjectDialog({ project, trigger, open: controlledOpen, onOpenCh
                   fileName="project-image.jpg"
                   tags={["project-image"]}
                   useUniqueFileName={true}
-                  validateFile={(file) => file.size < 5000000}
+                  validateFile={(file: any) => file.size < 5000000}
                   onUploadStart={() => setIsImageUploading(true)}
-                  onSuccess={(res) => handleUploadSuccess(res, "images")}
-                  onError={(err) => handleUploadError(err, "images")}
+                  onSuccess={(res:any) => handleUploadSuccess(res, "images")}
+                  onError={(err: any) => handleUploadError(err, "images")}
                   style={{ display: "none" }}
                   id="image-upload"
                   accept="image/*"
@@ -311,10 +311,10 @@ export function ProjectDialog({ project, trigger, open: controlledOpen, onOpenCh
                   fileName="project-video.mp4"
                   tags={["project-video"]}
                   useUniqueFileName={true}
-                  validateFile={(file) => file.size < 50000000} // 50MB limit for video?
+                  validateFile={(file:any) => file.size < 50000000} // 50MB limit for video?
                   onUploadStart={() => setIsVideoUploading(true)}
-                  onSuccess={(res) => handleUploadSuccess(res, "videos")}
-                  onError={(err) => handleUploadError(err, "videos")}
+                  onSuccess={(res:any) => handleUploadSuccess(res, "videos")}
+                  onError={(err:any) => handleUploadError(err, "videos")}
                   style={{ display: "none" }}
                   id="video-upload"
                   accept="video/*"
