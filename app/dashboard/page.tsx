@@ -36,35 +36,8 @@ function useDashboardData() {
           { title: "Refined project brief", timestamp: "2h ago", status: "in-progress" },
           { title: "Booked mentor session", timestamp: "Yesterday", status: "draft" },
         ],
-        projects: [
-          {
-            title: "Campus Compass",
-            description: "Mobile companion to navigate campus and events.",
-            techStack: ["Next.js", "Expo", "Maps"],
-            status: "live",
-            repoLink: "https://github.com/example/campus-compass",
-            image: "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&q=80&w=800",
-            sandbox: "https://codesandbox.io/s/campus-compass",
-          },
-          {
-            title: "Study Buddy",
-            description: "AI study planner that turns syllabi into sprints.",
-            techStack: ["Next.js", "Prisma", "AI"],
-            status: "building",
-            image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
-          },
-          {
-            title: "GreenLedger",
-            description: "Track and report carbon footprint for clubs.",
-            techStack: ["TypeScript", "PostgreSQL"],
-            status: "idea",
-          },
-        ],
-        achievements: [
-          { title: "Hackathon winner", description: "Real-time shuttle tracker.", date: "Oct 2024" },
-          { title: "Research assistant", description: "LLM-assisted learning pathways.", date: "Jul 2024" },
-          { title: "Open source", description: "Accessibility fixes for design system.", date: "May 2024" },
-        ],
+        projects: [],
+        achievements: [],
         settings: [
           { title: "Account protection", description: "Sign-in alerts and device approvals.", enabled: true },
           { title: "AI assist", description: "Use AI suggestions while drafting.", enabled: true },
@@ -195,13 +168,13 @@ export default function DashboardPage() {
       case "projects":
         return (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Projects projects={data?.projects || []} />
+            <Projects />
           </div>
         );
       case "achievements":
         return (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Achievements achievements={data?.achievements || []} />
+            <Achievements  />
           </div>
         );
       case "activity":

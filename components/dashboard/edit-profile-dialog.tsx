@@ -99,7 +99,7 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
 
   const authenticator = async () => {
     try {
-      const response = await apiClient.get("/media/authorization", {
+      const response = await apiClient.get("/media/authenticate-upload", {
         headers: { authorization: localStorage.getItem("token") || "" },
       });
       return { ...response.data };

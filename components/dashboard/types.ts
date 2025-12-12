@@ -30,9 +30,11 @@ export type Project = {
 };
 
 export type Achievement = {
+  id?: number;
   title: string;
   description: string;
   date: string;
+  images?: string[];
 };
 
 export type SettingsItem = {
