@@ -16,14 +16,17 @@ export type Activity = {
 };
 
 export type Project = {
+  id?: number;
   title: string;
   description: string;
   techStack: string[];
-  status: "live" | "building" | "idea";
+  status?: "live" | "building" | "idea";
   repoLink?: string;
   demoLink?: string;
   image?: string;
-  sandbox?: string;
+  images: string[];
+  videos: string[];
+  additionalInfo?: string;
 };
 
 export type Achievement = {
