@@ -1,12 +1,12 @@
 "use client";
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
+import { IKContext, IKUpload } from "imagekitio-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; // I might need to create this if it doesn't exist, but I'll assume standard shadcn or use Input for now and fix later. Actually I should check.
 import { apiClient } from "@/lib/utils";
-
+const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
+const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 // Schema for the form
 const profileFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
@@ -42,6 +43,7 @@ interface EditProfileDialogProps {
 
 export function EditProfileDialog({ user }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormValues>({
@@ -83,7 +85,6 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
       if (value !== "") {
         filteredData[key as keyof ProfileFormValues] = value;
       }
-
     });
 
     console.log("Submitting profile data:", filteredData);
@@ -96,6 +97,18 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
     mutation.mutate(data);
   }
 
+  const authenticator = async () => {
+    try {
+      const response = await apiClient.get("/media/authorization", {
+        headers: { authorization: localStorage.getItem("token") || "" },
+      });
+      return { ...response.data };
+    } catch (error) {
+      // @ts-ignore
+      throw new Error(`Failed to get authentication parameters , ${error.message}`);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -107,6 +120,54 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
           <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label>Avatar</Label>
+            <div className="flex items-center gap-4">
+              <div className="relative size-16 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
+                {isUploading ? (
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                ) : form.watch("avatar") ? (
+                  <img src={form.watch("avatar") || ""} alt="Avatar preview" className="object-cover w-full h-full" />
+                ) : (
+                  <User className="size-8 text-muted-foreground" />
+                )}
+              </div>
+              <IKContext
+                publicKey={IMAGEKIT_PUBLIC_KEY}
+                urlEndpoint={IMAGEKIT_URL_ENDPOINT}
+                authenticator={authenticator}
+              >
+                <IKUpload
+                  fileName="avatar.png"
+                  onError={(err: any) => {
+                    toast.error("Image upload failed");
+                    console.error(err);
+                    setIsUploading(false);
+                  }}
+                  onSuccess={(res: any) => {
+                    form.setValue("avatar", res.url);
+                    toast.success("Image uploaded");
+                    setIsUploading(false);
+                  }}
+                  onUploadStart={() => setIsUploading(true)}
+                  className="hidden"
+                  id="avatar-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isUploading}
+                  onClick={() => document.getElementById("avatar-upload")?.click()}
+                >
+                  {isUploading ? "Uploading..." : "Upload Image"}
+                </Button>
+              </IKContext>
+            </div>
+            {form.formState.errors.avatar && (
+              <p className="text-sm text-red-500">{form.formState.errors.avatar.message}</p>
+            )}
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" {...form.register("name")} placeholder="Your name" />
@@ -122,14 +183,6 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
               className="md:min-h-[200px]"
             />
             {form.formState.errors.bio && <p className="text-sm text-red-500">{form.formState.errors.bio.message}</p>}
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="avatar">Avatar URL</Label>
-            <Input id="avatar" {...form.register("avatar")} placeholder="https://example.com/avatar.png" />
-            {form.formState.errors.avatar && (
-              <p className="text-sm text-red-500">{form.formState.errors.avatar.message}</p>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
