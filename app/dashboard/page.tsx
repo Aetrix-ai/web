@@ -1,22 +1,23 @@
-"use client"
+"use client";
 
-import { FolderGit2, LayoutDashboard, LifeBuoy, Loader2, Settings, Sparkles, Trophy, UserRound } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { FolderGit2, LayoutDashboard, LifeBuoy, Loader2, Settings, Sparkles, Trophy, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { Achievements } from "@/components/dashboard/achievements"
-import { Navbar } from "@/components/dashboard/navbar"
-import type { NavItem } from "@/components/dashboard/navbar"
-import { Projects } from "@/components/dashboard/projects"
-import { RecentActivity } from "@/components/dashboard/recent-activity"
-import { SettingsSection } from "@/components/dashboard/settings-section"
-import { UserDetails } from "@/components/dashboard/user-details"
-import type { DashboardData, User } from "@/components/dashboard/types"
-import { Button } from "@/components/ui/button"
+import { Achievements } from "@/components/dashboard/achievements";
+import { Navbar } from "@/components/dashboard/navbar";
+import type { NavItem } from "@/components/dashboard/navbar";
+import { Projects } from "@/components/dashboard/projects";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { SettingsSection } from "@/components/dashboard/settings-section";
+import { UserDetails } from "@/components/dashboard/user-details";
+import type { DashboardData, User } from "@/components/dashboard/types";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 function useDashboardData() {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
-
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   useEffect(() => {
     const timer = setTimeout(() => {
       setData({
@@ -69,14 +70,14 @@ function useDashboardData() {
           { title: "AI assist", description: "Use AI suggestions while drafting.", enabled: true },
           { title: "Privacy", description: "Limit profile visibility to cohort.", enabled: false },
         ],
-      })
-      setLoading(false)
-    }, 400)
+      });
+      setLoading(false);
+    }, 400);
 
-    return () => clearTimeout(timer)
-  }, [])
+    return () => clearTimeout(timer);
+  }, []);
 
-  return { data, loading }
+  return { data, loading };
 }
 
 const navItems: NavItem[] = [
@@ -86,12 +87,12 @@ const navItems: NavItem[] = [
   { id: "achievements", label: "Achievements", icon: Trophy },
   { id: "activity", label: "Activity", icon: Sparkles },
   { id: "settings", label: "Settings", icon: Settings },
-]
+];
 
 export default function DashboardPage() {
-  const { data, loading } = useDashboardData()
-  const [activeTab, setActiveTab] = useState("overview")
-
+  const { data, loading } = useDashboardData();
+  const [activeTab, setActiveTab] = useState("overview");
+  const router = useRouter();
   const placeholderUser = useMemo<User>(
     () => ({
       name: "Loading...",
@@ -100,9 +101,9 @@ export default function DashboardPage() {
       avatar: "https://api.dicebear.com/8.x/thumbs/svg?seed=placeholder",
     }),
     []
-  )
+  );
 
-  const user = data?.user ?? placeholderUser
+  const user = data?.user ?? placeholderUser;
 
   const renderContent = () => {
     if (loading) {
@@ -113,7 +114,7 @@ export default function DashboardPage() {
             <span className="text-lg">Loading your portfolio...</span>
           </div>
         </div>
-      )
+      );
     }
 
     switch (activeTab) {
@@ -144,66 +145,81 @@ export default function DashboardPage() {
               <div className="rounded-xl border bg-card p-6 shadow-sm h-full flex flex-col">
                 <h3 className="font-semibold mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-2 gap-3 flex-1">
-                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                        <FolderGit2 className="size-5 text-primary" />
-                        <span>Add Project</span>
-                    </Button>
-                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                        <Trophy className="size-5 text-primary" />
-                        <span>Add Achievement</span>
-                    </Button>
-                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                        <UserRound className="size-5 text-primary" />
-                        <span>Edit Profile</span>
-                    </Button>
-                    <Button variant="outline" className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors">
-                        <Settings className="size-5 text-primary" />
-                        <span>Settings</span>
-                    </Button>
+                  <Button
+                    variant="outline"
+                    className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors"
+                  >
+                    <FolderGit2 className="size-5 text-primary" />
+                    <span>Add Project</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors"
+                  >
+                    <Trophy className="size-5 text-primary" />
+                    <span>Add Achievement</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors"
+                  >
+                    <UserRound className="size-5 text-primary" />
+                    <span>Edit Profile</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-full py-4 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/20 transition-colors"
+                  >
+                    <Settings className="size-5 text-primary" />
+                    <span>Settings</span>
+                  </Button>
                 </div>
               </div>
             </div>
 
-            <Button className="w-full py-8 text-lg font-semibold transition-all hover:shadow-md active:scale-[0.99]">
-                <Sparkles className="mr-2 size-6" />
-                Create Website
+            <Button
+              onClick={() => router.replace("/generate")}
+              className="w-full py-8 text-lg font-semibold transition-all hover:shadow-md active:scale-[0.99]"
+            >
+              <Sparkles className="mr-2 size-6" />
+              Create Website
             </Button>
           </div>
-        )
+        );
       case "profile":
         return (
           <div className="mx-auto space-y-6 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">
             <UserDetails user={user} />
           </div>
-        )
+        );
       case "projects":
         return (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Projects projects={data?.projects || []} />
-            </div>
-        )
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Projects projects={data?.projects || []} />
+          </div>
+        );
       case "achievements":
         return (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Achievements achievements={data?.achievements || []} />
-            </div>
-        )
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Achievements achievements={data?.achievements || []} />
+          </div>
+        );
       case "activity":
         return (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <RecentActivity activities={data?.activities || []} />
-            </div>
-        )
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <RecentActivity activities={data?.activities || []} />
+          </div>
+        );
       case "settings":
         return (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <SettingsSection settings={data?.settings || []} />
-            </div>
-        )
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <SettingsSection settings={data?.settings || []} />
+          </div>
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -216,17 +232,17 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">Manage your {activeTab} and portfolio data.</p>
           </div>
           <div className="flex items-center gap-4">
-             <Button variant="outline" size="sm">View Public Profile</Button>
-             <div className="h-8 w-8 rounded-full bg-primary/10 border flex items-center justify-center text-xs font-medium text-primary">
-                {user.name.charAt(0)}
-             </div>
+            <Button variant="outline" size="sm">
+              View Public Profile
+            </Button>
+            <div className="h-8 w-8 rounded-full bg-primary/10 border flex items-center justify-center text-xs font-medium text-primary">
+              {user.name.charAt(0)}
+            </div>
           </div>
         </header>
 
-        <div className="p-8 w-full">
-          {renderContent()}
-        </div>
+        <div className="p-8 w-full">{renderContent()}</div>
       </main>
     </div>
-  )
+  );
 }
