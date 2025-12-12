@@ -24,8 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/utils";
 import { Project } from "./types";
-import axios from "axios";
-
+import { Image } from "@imagekit/react";
 
 const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
@@ -106,7 +105,10 @@ export function ProjectDialog({ project, trigger, open: controlledOpen, onOpenCh
       const payload = {
         ...values,
         techStack: values.techStack
-          ? values.techStack.split(",").map((t) => t.trim()).filter(Boolean)
+          ? values.techStack
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
           : [],
       };
 
@@ -124,7 +126,7 @@ export function ProjectDialog({ project, trigger, open: controlledOpen, onOpenCh
     },
     onSuccess: () => {
       toast.success(project ? "Project updated successfully" : "Project created successfully");
-      queryClient.invalidateQueries({ queryKey: ["user"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       setOpen(false);
       form.reset();
     },
@@ -235,14 +237,20 @@ export function ProjectDialog({ project, trigger, open: controlledOpen, onOpenCh
               <div className="flex flex-wrap gap-2 mb-2">
                 {form.watch("images").map((url, index) => (
                   <div key={index} className="relative w-20 h-20 border rounded overflow-hidden group">
-                    <img src={url} alt={`Project ${index}`} className="w-full h-full object-cover" />
-                    <button
+                    <Image
+                      urlEndpoint={IMAGEKIT_URL_ENDPOINT}
+                      src={url}
+                      alt={`Project ${index}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
                       type="button"
                       onClick={() => removeMedia("images", index)}
+                      size={"sm"}
                       className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="size-3" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
