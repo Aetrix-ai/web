@@ -29,6 +29,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     try {
       const response = await apiClient.post("auth/signin", { email, password });
       if (response.status === 200) {
+        localStorage.setItem("token", response.data.token);
         toast.success("Welcome back!");
         router.push("/dashboard");
       }

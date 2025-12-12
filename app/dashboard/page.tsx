@@ -189,7 +189,7 @@ export default function DashboardPage() {
       case "profile":
         return (
           <div className="mx-auto space-y-6 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <UserDetails user={user} />
+            <UserDetails />
           </div>
         );
       case "projects":
