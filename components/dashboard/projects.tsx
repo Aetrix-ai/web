@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FolderGit2, Plus, ExternalLink, Github, Box, Edit, Trash2 } from "lucide-react";
+import { FolderGit2, Plus, ExternalLink, Github, Box, Edit, Trash2, Maximize2, PlayCircle } from "lucide-react";
 import { IKContext, IKImage } from "imagekitio-react";
 import { toast } from "sonner";
 
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { apiClient } from "@/lib/utils";
+import { apiClient, cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProjectDialog } from "./project-dialog";
 import { Project } from "./types";
@@ -24,41 +24,112 @@ import { Project } from "./types";
 const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 
-function ProjectImageCarousel({ images, title }: { images: string[]; title: string }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+function ProjectMediaViewer({ images = [], videos = [], title }: { images?: string[]; videos?: string[]; title: string }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const mediaItems = [
+    ...(images || []).map((url) => ({ type: "image" as const, url })),
+    ...(videos || []).map((url) => ({ type: "video" as const, url })),
+  ];
 
   useEffect(() => {
-    if (images.length <= 1) return;
+    if (mediaItems.length <= 1 || isZoomed || isHovered) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
+      setSelectedIndex((prev) => (prev + 1) % mediaItems.length);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [images.length]);
+  }, [mediaItems.length, isZoomed, isHovered]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      const width = scrollRef.current.offsetWidth;
-      scrollRef.current.scrollTo({
-        left: currentIndex * width,
-        behavior: "smooth",
-      });
-    }
-  }, [currentIndex]);
+  if (mediaItems.length === 0) return null;
+
+  const currentMedia = mediaItems[selectedIndex];
 
   return (
-    <div ref={scrollRef} className="flex h-full w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-      {images.map((img, idx) => (
-        <div key={idx} className="w-full h-full shrink-0 snap-center">
-          <IKImage
-            src={img}
-            alt={`${title} ${idx + 1}`}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+    <div
+      className="flex flex-col h-full w-full group/container"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Large Preview */}
+      <div className="relative flex-1 w-full overflow-hidden group/media bg-muted/50">
+        <div className="w-full h-full cursor-pointer" onClick={() => setIsZoomed(true)}>
+          {currentMedia.type === "image" ? (
+            <IKImage
+              src={currentMedia.url}
+              alt={`${title} ${selectedIndex + 1}`}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover/media:scale-105"
+            />
+          ) : (
+            <div className="relative h-full w-full bg-black flex items-center justify-center group-hover/media:scale-105 transition-transform duration-300">
+              <video src={currentMedia.url} className="h-full w-full object-contain" muted playsInline />
+              <PlayCircle className="absolute text-white/80 size-12 drop-shadow-lg" />
+            </div>
+          )}
         </div>
-      ))}
+
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-2 right-2 opacity-0 group-hover/container:opacity-100 transition-opacity z-20 h-8 w-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsZoomed(true);
+          }}
+        >
+          <Maximize2 className="size-4" />
+        </Button>
+      </div>
+
+      {/* Thumbnails */}
+      {mediaItems.length > 1 && (
+        <div className="flex gap-1 p-1 overflow-x-auto  h-10 shrink-0 scrollbar-hide">
+          {mediaItems.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedIndex(idx);
+              }}
+              className={cn(
+                "relative aspect-video h-full overflow-hidden rounded-sm border-2 shrink-0 transition-all",
+                selectedIndex === idx
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-transparent opacity-70 hover:opacity-100"
+              )}
+            >
+              {item.type === "image" ? (
+                <IKImage src={item.url} alt={`Thumbnail ${idx}`} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-black flex items-center justify-center">
+                  <video src={item.url} className="h-full w-full object-cover" />
+                  <PlayCircle className="absolute text-white/80 size-4" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Zoom Modal */}
+      <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
+        <DialogContent className="max-w-5xl w-full p-0 overflow-hidden bg-black border-none aspect-video sm:max-h-[80vh]">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {currentMedia.type === "image" ? (
+              <IKImage
+                src={currentMedia.url}
+                alt={`${title} full view`}
+                className="max-h-full max-w-full object-contain"
+              />
+            ) : (
+              <video src={currentMedia.url} className="w-full h-full" controls autoPlay />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -192,16 +263,12 @@ export function Projects() {
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            <div className="relative h-48 w-full overflow-hidden border-b bg-muted/50">
+            <div className="relative h-72 w-full overflow-hidden ">
               <IKContext urlEndpoint={IMAGEKIT_URL_ENDPOINT} publicKey={IMAGEKIT_PUBLIC_KEY}>
-                {project.images && project.images.length > 0 ? (
-                  <ProjectImageCarousel images={project.images} title={project.title} />
+                {(project.images?.length || 0) > 0 || (project.videos?.length || 0) > 0 ? (
+                  <ProjectMediaViewer images={project.images} videos={project.videos} title={project.title} />
                 ) : project.image ? (
-                  <IKImage
-                    src={project.image}
-                    alt={project.title}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                  <ProjectMediaViewer images={[project.image]} title={project.title} />
                 ) : (
                   <div className="flex h-full items-center justify-center">
                     <FolderGit2 className="size-10 text-muted-foreground/50" />
