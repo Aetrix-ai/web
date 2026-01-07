@@ -2,6 +2,7 @@ import { Chatbox } from "@/components/generate/chatbox"
 import { Preview } from "@/components/generate/preview"
 
 export default function GeneratePage() {
+
   return (
     <div className="flex h-screen flex-col p-4 md:flex-row bg-background">
       {/* Left side - Chatbox (1 part) */}

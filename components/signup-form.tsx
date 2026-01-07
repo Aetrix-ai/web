@@ -8,7 +8,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
+import { Image } from "@imagekit/react";
+const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -170,10 +171,11 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
             </FieldGroup>
           </form>
           <div className="bg-muted relative hidden md:block">
-            <img
-              src="/placeholder.svg"
+            <Image
+              urlEndpoint={IMAGEKIT_URL_ENDPOINT}
+              src="https://ik.imagekit.io/px6dnnjku/Mobile%20login-cuate.png"
               alt="Image"
-              className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              className="w-full h-full object-cover"
             />
           </div>
         </CardContent>
