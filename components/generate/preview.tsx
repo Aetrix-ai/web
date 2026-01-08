@@ -4,11 +4,15 @@ import * as React from "react";
 import { apiClient, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "../ui/button";
+import { SiriLoading } from "@/components/ui/siri-loading";
+import "./preview.css";
 
 export function Preview({ className }: React.ComponentProps<"div">) {
   const [id, setID] = React.useState<string | null>(null);
   const [view, setView] = React.useState<8080 | 5173>(5173);
+  const [iframeLoaded, setIframeLoaded] = React.useState(false);
   function handleToggle() {
+    setIframeLoaded(false);
     if (view === 5173) {
       setView(8080);
     } else {
@@ -35,28 +39,41 @@ export function Preview({ className }: React.ComponentProps<"div">) {
     getSandboxUrl();
   }, []);
 
-
   return (
-    <Card className={cn("flex flex-col p-0 h-full overflow-hidden", className)}>
-      <div className="border-b fixed top-5 right-5">
-        <Button size={"sm"} variant={"secondary"} onClick={handleToggle}>
-          {view === 5173 ? "Code Preview" : "React Sandbox"}
-        </Button>
-      </div>
-      {!id && (
-        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-          <div className="text-center">
-            <a  href={`https://${5173}-${id}.e2b.app`} >{`https://${5173}-${id}.e2b.app`}</a>
-            <p className="text-sm">Generated content will appear here</p>
-            <p className="text-xs opacity-70">React Sandbox / Code Preview</p>
-          </div>
-        </div>
+    <div className={cn("relative h-full", !iframeLoaded && id && "p-1")}>
+      {(!iframeLoaded || !id) && (
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 via-blue-500 via-cyan-500 to-purple-500 rounded-lg animate-gradient-flow"></div>
       )}
-      {/* Iframe or Sandbox would go here */}
-      {/* <iframe src="..." className="w-full h-full border-0" /> */}
-      {view === 5173
-        ? id && <iframe src={`https://${5173}-${id}.e2b.app`} className="w-full h-full border-0" />
-        : id && <iframe src={`https://${8080}-${id}.e2b.app`} className="w-full h-full border-0" />}
-    </Card>
+      <Card className={cn("flex flex-col p-0 h-full overflow-hidden relative bg-background", className)}>
+        <div className="absolute top-5 right-5 z-50">
+          <Button size={"sm"} variant={"secondary"} onClick={handleToggle}>
+            {view === 5173 ? "Code Preview" : "React Sandbox"}
+          </Button>
+        </div>
+
+        {(!iframeLoaded || !id) && (
+          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-xl z-10">
+            <SiriLoading />
+          </div>
+        )}
+        {view === 5173
+          ? id && (
+              <iframe
+                loading="eager"
+                onLoad={() => setIframeLoaded(true)}
+                src={`https://${5173}-${id}.e2b.app`}
+                className="w-full h-full border-0"
+              />
+            )
+          : id && (
+              <iframe
+                loading="eager"
+                onLoad={() => setIframeLoaded(true)}
+                src={`https://${8080}-${id}.e2b.app`}
+                className="w-full h-full border-0"
+              />
+            )}
+      </Card>
+    </div>
   );
 }
