@@ -7,10 +7,13 @@ import { Button } from "../ui/button";
 import { SiriLoading } from "@/components/ui/siri-loading";
 import "./preview.css";
 
-export function Preview({ className }: React.ComponentProps<"div">) {
+export function Preview({ className , iframeLoaded, setIframeLoaded }: {
+  className?: string;
+  iframeLoaded: boolean;
+  setIframeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const [id, setID] = React.useState<string | null>(null);
   const [view, setView] = React.useState<8080 | 5173>(5173);
-  const [iframeLoaded, setIframeLoaded] = React.useState(false);
   function handleToggle() {
     setIframeLoaded(false);
     if (view === 5173) {
