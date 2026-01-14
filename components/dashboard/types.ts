@@ -1,3 +1,5 @@
+import { achievementSchema } from "@/lib/schema";
+import { z } from "zod";
 export type User = {
   name: string;
   email: string;
@@ -29,13 +31,10 @@ export type Project = {
   additionalInfo?: string;
 };
 
-export type Achievement = {
-  id?: number;
-  title: string;
-  description: string;
-  date: string;
-  images?: string[];
-};
+export interface Achievement extends z.infer<typeof achievementSchema> {
+  id: number;
+}
+
 
 export type SettingsItem = {
   title: string;

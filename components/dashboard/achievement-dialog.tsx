@@ -24,20 +24,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/utils";
 import { Achievement } from "./types";
+import { achievementSchema } from "@/lib/schema";
+import axios from "axios";
 
 const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 
-const achievementFormSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200),
-  description: z.string().min(1, "Description is required").max(2000),
-  date: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid date",
-  }),
-  images: z.array(z.string().url()),
-});
+/**
+ * old schema kept for reference
+ */
+// const achievementFormSchema = z.object({
+//   title: z.string().min(1, "Title is required").max(200),
+//   description: z.string().min(1, "Description is required").max(2000),
+//   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
+//     message: "Invalid date",
+//   }),
+//   images: z.array(z.string().url()),
+// });
 
-type AchievementFormValues = z.infer<typeof achievementFormSchema>;
+type AchievementFormValues = z.infer<typeof achievementSchema>;
 
 interface AchievementDialogProps {
   achievement?: Achievement;
@@ -61,12 +66,12 @@ export function AchievementDialog({
   const setOpen = isControlled ? onOpenChange! : setInternalOpen;
 
   const form = useForm<AchievementFormValues>({
-    resolver: zodResolver(achievementFormSchema),
+    resolver: zodResolver(achievementSchema),
     defaultValues: {
       title: "",
       description: "",
       date: new Date().toISOString().split("T")[0],
-      images: [],
+      media: [],
     },
   });
 
@@ -76,14 +81,14 @@ export function AchievementDialog({
         title: achievement.title,
         description: achievement.description,
         date: new Date(achievement.date).toISOString().split("T")[0],
-        images: achievement.images || [],
+        media: achievement.media || [],
       });
     } else {
       form.reset({
         title: "",
         description: "",
         date: new Date().toISOString().split("T")[0],
-        images: [],
+        media: [],
       });
     }
   }, [achievement, form, open]);
@@ -146,18 +151,27 @@ export function AchievementDialog({
 
   const onSuccess = (res: any) => {
     console.log("Upload success response:", res);
-    const currentImages = form.getValues("images") || [];
+    const currentImages = form.getValues("media") || [];
     console.log("Current images before update:", currentImages);
-    form.setValue("images", [...currentImages, res.url]);
-    console.log("Images after update:", form.getValues("images"));
+    form.setValue("media", [
+      ...currentImages,
+      {
+        fileId: res.fileId,
+        type: "IMAGE",
+        url: res.url,
+        additional: JSON.stringify({ width: res.width, height: res.height }),
+      },
+    ]);
+    console.log("Images after update:", form.getValues("media"));
     setIsImageUploading(false);
     toast.success("Image uploaded");
   };
 
-  const removeImage = (index: number) => {
-    const currentImages = form.getValues("images") || [];
+
+  const removeImage = async (index: number) => {
+    const currentImages = form.getValues("media") || [];
     const newImages = currentImages.filter((_, i) => i !== index);
-    form.setValue("images", newImages);
+    form.setValue("media", newImages);
   };
 
   return (
@@ -205,11 +219,11 @@ export function AchievementDialog({
             <div className="space-y-2">
               <Label>Images</Label>
               <div className="flex flex-wrap gap-2 mb-2">
-                {form.watch("images")?.map((url, index) => (
+                {form.watch("media")?.map((mediaItem, index) => (
                   <div key={index} className="relative w-20 h-20 border rounded overflow-hidden group">
                     <Image
                       urlEndpoint={IMAGEKIT_URL_ENDPOINT}
-                      src={url}
+                      src={mediaItem.url}
                       alt={`Achievement ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

@@ -153,18 +153,18 @@ export function Achievements() {
             </div>
 
             {/* Image Preview */}
-            {item.images && item.images.length > 0 && (
+            {item.media && item.media.length > 0 && (
               <div className="relative h-48 w-full overflow-hidden bg-muted">
                 <IKContext urlEndpoint={IMAGEKIT_URL_ENDPOINT} publicKey={IMAGEKIT_PUBLIC_KEY}>
                   <IKImage
-                    src={item.images[0]}
+                    src={item.media[0].url}
                     alt={item.title}
                     className="h-full w-full object-cover"
                   />
                 </IKContext>
-                {item.images.length > 1 && (
+                {item.media.length > 1 && (
                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    +{item.images.length - 1} more
+                    +{item.media.length - 1} more
                   </div>
                 )}
               </div>
