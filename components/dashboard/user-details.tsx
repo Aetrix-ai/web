@@ -4,7 +4,7 @@ import { Sparkles, Mail, Github, Linkedin, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { apiClient } from "@/lib/utils";
+import { apiClient, apiClientWithAuth } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -13,10 +13,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { EditProfileDialog } from "./edit-profile-dialog";
 
 async function fetchUserData() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-  const res = await apiClient.get("/user/profile", {
-    headers: { authorization: token || "" },
-  });
+
+  const res = await apiClientWithAuth().get("/user");
   return res.data;
 }
 
@@ -60,8 +58,9 @@ export function UserDetails() {
       <div className="h-32 bg-linear-to-r from-primary/20 to-primary/5" />
       <CardContent className="relative pt-0">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 -mt-12 px-2">
+          {data.user}
           <img
-            src={data?.avatar || "https://github.com/shadcn.png"}
+            src={data?.avatar?.url || "https://github.com/shadcn.png"}
             alt="Profile picture"
             className="size-24 rounded-full border-4 border-background shadow-sm bg-background object-cover"
           />

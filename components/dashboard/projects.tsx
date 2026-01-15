@@ -16,37 +16,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { apiClient, cn } from "@/lib/utils";
+import { apiClient, apiClientWithAuth, cn, PROJECT_API_URL } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProjectDialog } from "./project-dialog";
 import { Project } from "./types";
+import { Media } from "@/lib/schema";
 
 const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 
-function ProjectMediaViewer({ images = [], videos = [], title }: { images?: string[]; videos?: string[]; title: string }) {
+function ProjectMediaViewer({ media = [], title }: { media: Media[]; title: string }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const mediaItems = [
-    ...(images || []).map((url) => ({ type: "image" as const, url })),
-    ...(videos || []).map((url) => ({ type: "video" as const, url })),
-  ];
+
 
   useEffect(() => {
-    if (mediaItems.length <= 1 || isZoomed || isHovered) return;
+    if (media.length <= 1 || isZoomed || isHovered) return;
 
     const interval = setInterval(() => {
-      setSelectedIndex((prev) => (prev + 1) % mediaItems.length);
+      setSelectedIndex((prev) => (prev + 1) % media.length);
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [mediaItems.length, isZoomed, isHovered]);
+  }, [media.length, isZoomed, isHovered]);
+  if (media.length === 0) return null;
 
-  if (mediaItems.length === 0) return null;
-
-  const currentMedia = mediaItems[selectedIndex];
+  const currentMedia = media[selectedIndex];
 
   return (
     <div
@@ -57,7 +54,7 @@ function ProjectMediaViewer({ images = [], videos = [], title }: { images?: stri
       {/* Large Preview */}
       <div className="relative flex-1 w-full overflow-hidden group/media bg-muted/50">
         <div className="w-full h-full cursor-pointer" onClick={() => setIsZoomed(true)}>
-          {currentMedia.type === "image" ? (
+          {currentMedia.type === "IMAGE" ? (
             <IKImage
               src={currentMedia.url}
               alt={`${title} ${selectedIndex + 1}`}
@@ -85,9 +82,9 @@ function ProjectMediaViewer({ images = [], videos = [], title }: { images?: stri
       </div>
 
       {/* Thumbnails */}
-      {mediaItems.length > 1 && (
+      {media.length > 1 && (
         <div className="flex gap-1 p-1 overflow-x-auto  h-10 shrink-0 scrollbar-hide">
-          {mediaItems.map((item, idx) => (
+          {media.map((item, idx) => (
             <button
               key={idx}
               onClick={(e) => {
@@ -101,7 +98,7 @@ function ProjectMediaViewer({ images = [], videos = [], title }: { images?: stri
                   : "border-transparent opacity-70 hover:opacity-100"
               )}
             >
-              {item.type === "image" ? (
+              {item.type === "IMAGE" ? (
                 <IKImage src={item.url} alt={`Thumbnail ${idx}`} className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full bg-black flex items-center justify-center">
@@ -118,7 +115,7 @@ function ProjectMediaViewer({ images = [], videos = [], title }: { images?: stri
       <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
         <DialogContent className="max-w-5xl w-full p-0 overflow-hidden bg-black border-none aspect-video sm:max-h-[80vh]">
           <div className="relative w-full h-full flex items-center justify-center">
-            {currentMedia.type === "image" ? (
+            {currentMedia.type === "IMAGE" ? (
               <IKImage
                 src={currentMedia.url}
                 alt={`${title} full view`}
@@ -136,9 +133,7 @@ function ProjectMediaViewer({ images = [], videos = [], title }: { images?: stri
 
 async function fetchProjects() {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-  const res = await apiClient.get("user/profile/projects", {
-    headers: { authorization: token || "" },
-  });
+  const res = await apiClientWithAuth().get(PROJECT_API_URL)
   return res.data;
 }
 
@@ -155,10 +150,7 @@ export function Projects() {
 
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
-      const token = localStorage.getItem("token");
-      await apiClient.delete(`/user/profile/project/${projectId}`, {
-        headers: { authorization: token || "" },
-      });
+      const res = await apiClientWithAuth().delete(`${PROJECT_API_URL}/${projectId}`);
     },
     onSuccess: () => {
       toast.success("Project deleted successfully");
@@ -210,7 +202,10 @@ export function Projects() {
       </Card>
     );
   }
-
+  function getRandom()  {
+                    const variants = [["default","completed"], ["secondary","in progress"], ["destructive","on hold"]];
+                    return variants[Math.floor(Math.random() * variants.length)];
+                  }
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -265,10 +260,8 @@ export function Projects() {
             </div>
             <div className="relative h-72 w-full overflow-hidden ">
               <IKContext urlEndpoint={IMAGEKIT_URL_ENDPOINT} publicKey={IMAGEKIT_PUBLIC_KEY}>
-                {(project.images?.length || 0) > 0 || (project.videos?.length || 0) > 0 ? (
-                  <ProjectMediaViewer images={project.images} videos={project.videos} title={project.title} />
-                ) : project.image ? (
-                  <ProjectMediaViewer images={[project.image]} title={project.title} />
+                {project.media && project.media.length > 0 ? (
+                  <ProjectMediaViewer media={project.media} title={project.title} />
                 ) : (
                   <div className="flex h-full items-center justify-center">
                     <FolderGit2 className="size-10 text-muted-foreground/50" />
@@ -278,11 +271,19 @@ export function Projects() {
             </div>
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
-                {project.status && (
-                  <Badge variant={project.status === "live" ? "default" : "secondary"} className="capitalize">
-                    {project.status}
+                {/**
+                 *  TODO: Add project status badge in API and display here
+                 *  as of now only static status is shown for demo purpose (randomly assigned)
+
+                 * */ }
+
+
+                  <Badge variant={
+                  getRandom()[0] as "default" | "secondary" | "destructive"
+                } className="capitalize">
+                    {getRandom()[1]}
                   </Badge>
-                )}
+
               </div>
               <CardTitle className="line-clamp-1">{project.title}</CardTitle>
               <CardDescription className="line-clamp-2">{project.description}</CardDescription>

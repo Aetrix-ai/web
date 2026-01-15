@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Achievement } from "./types";
-import { apiClient } from "@/lib/utils";
+import { ACHIEVEMENT_API_URL, apiClient, apiClientWithAuth } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
@@ -24,9 +24,7 @@ const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 
 async function fetchAchievements() {
-  const res = await apiClient.get("user/profile/achievement", {
-    headers: { Authorization: localStorage.getItem("token") || "" },
-  });
+  const res = await apiClientWithAuth().get(ACHIEVEMENT_API_URL);
   return res.data;
 }
 
@@ -44,9 +42,7 @@ export function Achievements() {
   const deleteMutation = useMutation({
     mutationFn: async (achievementId: number) => {
       const token = localStorage.getItem("token");
-      await apiClient.delete(`/user/profile/achievements/${achievementId}`, {
-        headers: { Authorization: token || "" },
-      });
+      await apiClientWithAuth().delete(`${ACHIEVEMENT_API_URL}/${achievementId}`);
     },
     onSuccess: () => {
       toast.success("Achievement deleted successfully");

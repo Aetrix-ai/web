@@ -1,4 +1,4 @@
-import { achievementSchema } from "@/lib/schema";
+import { achievementSchema, projectSchema } from "@/lib/schema";
 import { z } from "zod";
 export type User = {
   name: string;
@@ -17,18 +17,8 @@ export type Activity = {
   status: "done" | "in-progress" | "draft";
 };
 
-export type Project = {
-  id?: number;
-  title: string;
-  description: string;
-  techStack: string[];
-  status?: "live" | "building" | "idea";
-  repoLink?: string;
-  demoLink?: string;
-  image?: string;
-  images: string[];
-  videos: string[];
-  additionalInfo?: string;
+export interface Project extends z.infer<typeof projectSchema> {
+  id: number; 
 };
 
 export interface Achievement extends z.infer<typeof achievementSchema> {

@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { cn, FULL_AI_API_URL } from "@/lib/utils";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { MessageInput } from "../ui/message-input";
 import { MessageList } from "../ui/message-list";
@@ -41,7 +41,7 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:3000/ai/chat", {
+      const res = await fetch(FULL_AI_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,9 +99,11 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
           }
 
           if (!parsed.text || parsed.text.length === 0) continue;
-
-          assistantContent += parsed.text;
-
+          if (parsed.type === "tools") {
+            assistantContent += parsed.text + "\n";
+          } else {
+            assistantContent += parsed.text;
+          }
           setMessages((prev) =>
             prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg))
           );
@@ -153,14 +155,9 @@ export function Chatbox({
   React.useEffect(() => {
     setMessages([
       {
-        id: "1",
-        role: "user",
-        content: "Hello, how are you?",
-      },
-      {
         id: "2",
         role: "assistant",
-        content: "I'm doing well, thank you for asking!",
+        content: "hey how can i help you!",
       },
     ]);
   }, [setMessages]);

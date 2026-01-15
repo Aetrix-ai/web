@@ -21,21 +21,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; // I might need to create this if it doesn't exist, but I'll assume standard shadcn or use Input for now and fix later. Actually I should check.
-import { apiClient } from "@/lib/utils";
+import { apiClient, apiClientWithAuth } from "@/lib/utils";
+import { userUpdateSchema, MediaSchema } from "@/lib/schema";
 const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 // Schema for the form
-const profileFormSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  bio: z.string().max(500, "Bio must be less than 500 characters").optional().or(z.literal("")),
-  avatar: z.string().url("Invalid URL").optional().or(z.literal("")),
-  github: z.string().url("Invalid URL").optional().or(z.literal("")),
-  linkedin: z.string().url("Invalid URL").optional().or(z.literal("")),
-  twitter: z.string().url("Invalid URL").optional().or(z.literal("")),
-  resume: z.string().url("Invalid URL").optional().or(z.literal("")),
-});
 
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type ProfileFormValues = z.infer<typeof userUpdateSchema>;
 
 interface EditProfileDialogProps {
   user: any; // Replace with proper type if available
@@ -47,11 +39,11 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
   const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
+    resolver: zodResolver(userUpdateSchema),
     defaultValues: {
       name: user?.name || "",
       bio: user?.bio || "",
-      avatar: user?.avatar || "",
+      avatar: user?.avatar,
       github: user?.github || "",
       linkedin: user?.linkedin || "",
       twitter: user?.twitter || "",
@@ -61,10 +53,7 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
 
   const mutation = useMutation({
     mutationFn: async (values: ProfileFormValues) => {
-      const token = localStorage.getItem("token");
-      const res = await apiClient.put("/user/profile", values, {
-        headers: { authorization: token || "" },
-      });
+      const res = await apiClientWithAuth().put("/user", values);
       return res.data;
     },
     onSuccess: () => {
@@ -78,30 +67,28 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
     },
   });
 
-  async function onSubmit(data: ProfileFormValues) {
+  function onSubmit(data: ProfileFormValues) {
     // Filter out empty strings to send undefined/null if needed, or just send as is depending on backend
     const filteredData: Partial<ProfileFormValues> = {};
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== "") {
-        filteredData[key as keyof ProfileFormValues] = value;
+      // Handle avatar separately since it's an object type
+      if (key === "avatar") {
+        if (value) {
+          filteredData.avatar = value as z.infer<typeof MediaSchema>;
+        }
+      } else if (value !== "") {
+        // Type-safe assignment for string fields
+        filteredData[key as keyof Omit<ProfileFormValues, "avatar">] = value as string;
       }
     });
 
     console.log("Submitting profile data:", filteredData);
-    await apiClient.put("/user/profile", filteredData, {
-      headers: { authorization: localStorage.getItem("token") || "" },
-    });
-
-    // The schema allows empty strings via .or(z.literal("")), but backend might prefer nulls.
-    // For now, let's send what the form gives.
-    mutation.mutate(data);
+    mutation.mutate(filteredData as ProfileFormValues);
   }
 
   const authenticator = async () => {
     try {
-      const response = await apiClient.get("/media/authenticate-upload", {
-        headers: { authorization: localStorage.getItem("token") || "" },
-      });
+      const response = await apiClientWithAuth().get("/media/authenticate-upload");
       return { ...response.data };
     } catch (error) {
       // @ts-ignore
@@ -127,7 +114,11 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
                 {isUploading ? (
                   <Loader2 className="size-6 animate-spin text-muted-foreground" />
                 ) : form.watch("avatar") ? (
-                  <img src={form.watch("avatar") || ""} alt="Avatar preview" className="object-cover w-full h-full" />
+                  <img
+                    src={form.watch("avatar")?.url || ""}
+                    alt="Avatar preview"
+                    className="object-cover w-full h-full"
+                  />
                 ) : (
                   <User className="size-8 text-muted-foreground" />
                 )}
@@ -145,7 +136,12 @@ export function EditProfileDialog({ user }: EditProfileDialogProps) {
                     setIsUploading(false);
                   }}
                   onSuccess={(res: any) => {
-                    form.setValue("avatar", res.url);
+                    form.setValue("avatar", {
+                      url: res.url,
+                      fileId: res.fileId,
+                      type: "IMAGE",
+                      additional: JSON.stringify({ name: res.name, size: res.size, format: res.format }),
+                    });
                     toast.success("Image uploaded");
                     setIsUploading(false);
                   }}

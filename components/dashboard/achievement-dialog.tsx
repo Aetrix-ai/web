@@ -5,11 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, X, Image as ImageIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { IKContext, IKUpload } from "imagekitio-react";
-import { Image } from "@imagekit/react";
 
 import { Button } from "@/components/ui/button";
+import { MediaUploader } from "@/components/ui/media-uploader";
 import {
   Dialog,
   DialogContent,
@@ -22,25 +22,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { apiClient } from "@/lib/utils";
+import { ACHIEVEMENT_API_URL, apiClient, apiClientWithAuth } from "@/lib/utils";
 import { Achievement } from "./types";
 import { achievementSchema } from "@/lib/schema";
-import axios from "axios";
 
 const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "";
 const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "";
 
-/**
- * old schema kept for reference
- */
-// const achievementFormSchema = z.object({
-//   title: z.string().min(1, "Title is required").max(200),
-//   description: z.string().min(1, "Description is required").max(2000),
-//   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
-//     message: "Invalid date",
-//   }),
-//   images: z.array(z.string().url()),
-// });
+
 
 type AchievementFormValues = z.infer<typeof achievementSchema>;
 
@@ -58,7 +47,7 @@ export function AchievementDialog({
   onOpenChange,
 }: AchievementDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isMediaUploading, setIsMediaUploading] = useState(false);
   const queryClient = useQueryClient();
 
   const isControlled = controlledOpen !== undefined;
@@ -104,14 +93,10 @@ export function AchievementDialog({
       console.log("Payload being sent to backend:", payload);
 
       if (achievement) {
-        const res = await apiClient.put(`user/profile/achievement/${achievement.id}`, payload, {
-          headers: { Authorization: token || "" },
-        });
+        const res = await apiClientWithAuth().put(`${ACHIEVEMENT_API_URL}/${achievement.id}`, payload);
         return res.data;
       } else {
-        const res = await apiClient.post("user/profile/achievement", payload, {
-          headers: { Authorization: token || "" },
-        });
+        const res = await apiClientWithAuth().post(ACHIEVEMENT_API_URL, payload);
         return res.data;
       }
     },
@@ -133,45 +118,11 @@ export function AchievementDialog({
 
   const authenticator = async () => {
     try {
-      const response = await apiClient.get("/media/authenticate-upload", {
-        headers: { Authorization: localStorage.getItem("token") || "" },
-      });
-
+      const response = await apiClientWithAuth().get("/media/authenticate-upload");
       return { ...response.data };
     } catch (error: any) {
       throw new Error(`Authentication request failed: ${error.message}`);
     }
-  };
-
-  const onError = (err: any) => {
-    console.log("Error", err);
-    toast.error("Image upload failed");
-    setIsImageUploading(false);
-  };
-
-  const onSuccess = (res: any) => {
-    console.log("Upload success response:", res);
-    const currentImages = form.getValues("media") || [];
-    console.log("Current images before update:", currentImages);
-    form.setValue("media", [
-      ...currentImages,
-      {
-        fileId: res.fileId,
-        type: "IMAGE",
-        url: res.url,
-        additional: JSON.stringify({ width: res.width, height: res.height }),
-      },
-    ]);
-    console.log("Images after update:", form.getValues("media"));
-    setIsImageUploading(false);
-    toast.success("Image uploaded");
-  };
-
-
-  const removeImage = async (index: number) => {
-    const currentImages = form.getValues("media") || [];
-    const newImages = currentImages.filter((_, i) => i !== index);
-    form.setValue("media", newImages);
   };
 
   return (
@@ -216,65 +167,30 @@ export function AchievementDialog({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Images</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {form.watch("media")?.map((mediaItem, index) => (
-                  <div key={index} className="relative w-20 h-20 border rounded overflow-hidden group">
-                    <Image
-                      urlEndpoint={IMAGEKIT_URL_ENDPOINT}
-                      src={mediaItem.url}
-                      alt={`Achievement ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      size="sm"
-                      className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <IKContext
-                publicKey={IMAGEKIT_PUBLIC_KEY}
-                urlEndpoint={IMAGEKIT_URL_ENDPOINT}
-                authenticator={authenticator}
-              >
-                <IKUpload
-                  fileName="achievement-image.jpg"
-                  tags={["achievement"]}
-                  useUniqueFileName={true}
-                  validateFile={(file: any) => file.size < 5 * 1024 * 1024}
-                  onUploadStart={() => setIsImageUploading(true)}
-                  onSuccess={onSuccess}
-                  onError={onError}
-                  style={{ display: "none" }}
-                  id="achievement-image-upload"
-                  accept="image/*"
-                />
-                <Label
-                  htmlFor="achievement-image-upload"
-                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
-                >
-                  {isImageUploading ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <ImageIcon className="mr-2 size-4" />
-                  )}
-                  Upload Image
-                </Label>
-              </IKContext>
-            </div>
+            {/* Media Upload */}
+            <MediaUploader
+              media={form.watch("media") || []}
+              onMediaChange={(newMedia) => form.setValue("media", newMedia)}
+              isUploading={isMediaUploading}
+              authenticator={authenticator}
+              onUploadStart={() => setIsMediaUploading(true)}
+              onUploadSuccess={() => setIsMediaUploading(false)}
+              onUploadError={() => setIsMediaUploading(false)}
+              imageKitPublicKey={IMAGEKIT_PUBLIC_KEY}
+              imageKitUrlEndpoint={IMAGEKIT_URL_ENDPOINT}
+              uploadId="achievement-media-upload"
+              fileName="achievement-media"
+              tags={["achievement-media"]}
+              maxFileSize={50 * 1024 * 1024}
+              accept="image/*,video/*"
+            />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={mutation.isPending || isImageUploading}>
+            <Button type="submit" disabled={mutation.isPending || isMediaUploading}>
               {mutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
               {achievement ? "Save Changes" : "Add Achievement"}
             </Button>
