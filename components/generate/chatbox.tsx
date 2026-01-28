@@ -75,7 +75,6 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
           let parsed;
           try {
             parsed = JSON.parse(payload);
-            console.log("Parsed payload:", parsed);
             const writetools = [
               "filesystem-create_directory",
               "filesystem-edit_file",
@@ -85,10 +84,6 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
             if (parsed.type === "tools") {
               for (const tool of writetools) {
                 if (parsed.text.includes(tool)) {
-                  console.log("==============");
-                  console.log("==============");
-                  console.log("==============");
-                  console.log("==============");
                   console.log("Tool usage detected, reloading preview...");
                   LoadPreview(false);
                 }
@@ -100,9 +95,14 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
 
           if (!parsed.text || parsed.text.length === 0) continue;
           if (parsed.type === "tools") {
-            assistantContent += parsed.text + "\n";
-          } else {
-            assistantContent += parsed.text;
+            continue;
+          }
+          try {
+            JSON.parse(parsed.text).content[0].text;
+            console.log("Parsed content chunk:", JSON.parse(parsed.text).content);
+          } catch (e) {
+
+            assistantContent += "\n\n"+parsed.text;
           }
           setMessages((prev) =>
             prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg))
@@ -118,9 +118,9 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
           prev.map((msg) =>
             msg.role === "assistant" && msg.content === ""
               ? {
-                  ...msg,
-                  content: "Sorry, something went wrong. Please try again.",
-                }
+                ...msg,
+                content: "Sorry, something went wrong. Please try again.",
+              }
               : msg
           )
         );
