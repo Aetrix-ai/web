@@ -102,7 +102,7 @@ export function Preview({ className , iframeLoaded, setIframeLoaded }: {
                 <MenubarSeparator />
                 <MenubarItem onClick={() => setSaveToGitOpen(true)}>
                   <GitBranch className="h-4 w-4 mr-2" />
-                  Save to Git
+                  Save to Github
                 </MenubarItem>
                 <MenubarItem onClick={() => setAddCommitOpen(true)}>
                   <GitCommit className="h-4 w-4 mr-2" />
