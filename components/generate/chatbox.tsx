@@ -5,7 +5,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { MessageInput } from "../ui/message-input";
 import { MessageList } from "../ui/message-list";
 
-function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>>) {
+function useChatStream(
+  LoadPreview: React.Dispatch<React.SetStateAction<boolean>>,
+) {
   const [messages, setMessages] = React.useState<
     {
       id: string;
@@ -16,6 +18,38 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
   const [isGenerating, setIsGenerating] = React.useState(false);
   const controllerRef = React.useRef<AbortController | null>(null);
 
+  //@ts-ignore
+  const wraptools = (tool: any) => {
+    function getWrapTools(
+      toolName: string,
+      message: string,
+      status: "success" | "error" = "error",
+    ) {
+      let name = toolName.split("-").pop() || toolName;
+      name = name.replace(/_/g, " ");
+      name = name.charAt(0).toUpperCase() + name.slice(1);
+     
+      if (status === "success") {
+        return `> ✓⃝ **\`${name}\`**`;
+      }
+
+      // add line break for each
+      return `> ❗ **\`${name}\`** `;
+    }
+    const name = tool.name;
+    const content = tool.content;
+
+    if (!name || !content) {
+      console.warn("Tool missing name or content:", tool);
+      return "";
+    }
+
+    if (tool.status === "success") {
+      return getWrapTools(name, content, "success")  + "\n";
+    } else {
+      return getWrapTools(name, content, "error") + "\n";
+    }
+  };
   const startChat = async (prompt: string) => {
     const userMessageId = `${Date.now()}-user`;
     const assistantMessageId = `${Date.now()}-assistant`;
@@ -66,47 +100,45 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
         buffer = parts.pop() ?? "";
 
         for (const part of parts) {
-          if (!part.startsWith("data:")) continue;
-          const payload = part.replace("data:", "").trim();
-          if (payload === "END") {
-            setIsGenerating(false);
-            return;
+          const parsed = JSON.parse(part.replace("data:", ""));
+          //continude if parsed is empty or not an object
+          if (
+            !parsed ||
+            typeof parsed !== "object" ||
+            Object.keys(parsed).length === 0
+          ) {
+            console.warn("Received non-object chunk:", parsed);
+            continue;
           }
-          let parsed;
-          try {
-            parsed = JSON.parse(payload);
-            const writetools = [
-              "filesystem-create_directory",
-              "filesystem-edit_file",
-              "filesystem-move_file",
-              "filesystem-write_file",
-            ];
-            if (parsed.type === "tools") {
-              for (const tool of writetools) {
-                if (parsed.text.includes(tool)) {
-                  console.log("Tool usage detected, reloading preview...");
-                  LoadPreview(false);
-                }
-              }
+          if (parsed.model_request) {
+            const content = parsed.model_request[0].kwargs.content;
+            if (typeof content !== "string") continue;
+            assistantContent += content;
+            console.log("Parsed content chunk:", content);
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: assistantContent }
+                  : msg,
+              ),
+            );
+          } else if (parsed.tools) {
+            for (const tool of parsed.tools) {
+              console.log("Tool kwargs:", tool.kwargs);
+              assistantContent += wraptools(tool.kwargs);
+              assistantContent += "\n";
+              
+              // Add line break after each tool
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? { ...msg, content: assistantContent }
+                    : msg,
+                ),
+              );
             }
-          } catch {
-            continue;
           }
-
-          if (!parsed.text || parsed.text.length === 0) continue;
-          if (parsed.type === "tools") {
-            continue;
-          }
-          try {
-            JSON.parse(parsed.text).content[0].text;
-            console.log("Parsed content chunk:", JSON.parse(parsed.text).content);
-          } catch (e) {
-
-            assistantContent += "\n\n"+parsed.text;
-          }
-          setMessages((prev) =>
-            prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg))
-          );
         }
       }
     } catch (err) {
@@ -118,11 +150,11 @@ function useChatStream(LoadPreview: React.Dispatch<React.SetStateAction<boolean>
           prev.map((msg) =>
             msg.role === "assistant" && msg.content === ""
               ? {
-                ...msg,
-                content: "Sorry, something went wrong. Please try again.",
-              }
-              : msg
-          )
+                  ...msg,
+                  content: "Sorry, something went wrong. Please try again.",
+                }
+              : msg,
+          ),
         );
       }
     } finally {
@@ -149,7 +181,8 @@ export function Chatbox({
   const [prompt, setPrompt] = React.useState<string>("");
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-  const { messages, setMessages, isGenerating, startChat, stopChat } = useChatStream(LoadPreview);
+  const { messages, setMessages, isGenerating, startChat, stopChat } =
+    useChatStream(LoadPreview);
 
   // Initialize with welcome messages
   React.useEffect(() => {
@@ -198,3 +231,32 @@ export function Chatbox({
     </Card>
   );
 }
+
+/**
+     * [
+    {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+            "langchain_core",
+            "messages",
+            "ToolMessage"
+        ],
+        "kwargs": {
+            "status": "success",
+            "content": "Allowed directories:\n/home/user/e2b_scripts/play-ground",
+            "artifact": [],
+            "tool_call_id": "toolu_01RbaydXY1X1FbNPaLuy1QJx",
+            "name": "filesystem-list_allowed_directories",
+            "metadata": {},
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "id": "92d78a4c-beb3-400b-8d9e-4bd13defebdb"
+        }
+    }
+
+
+]
+     */
+
+//wrap it in a md code block for better display

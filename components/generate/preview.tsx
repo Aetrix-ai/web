@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 
-import { apiClient, cn } from "@/lib/utils";
+import { apiClient, apiClientWithAuth, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "../ui/button";
 import { SiriLoading } from "@/components/ui/siri-loading";
@@ -26,32 +26,64 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown } from "lucide-react";
 import "./preview.css";
+import { toast } from "sonner";
+import { useDebounce } from "@/hooks/use-debounced-search";
 
-export function Preview({ className , iframeLoaded, setIframeLoaded }: {
+export function Preview({ className, iframeLoaded, setIframeLoaded }: {
   className?: string;
   iframeLoaded: boolean;
   setIframeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [id, setID] = React.useState<string | null>(null);
   const [view, setView] = React.useState<8080 | 5173>(5173);
-  
+
   // Dialog states
   const [saveToGitOpen, setSaveToGitOpen] = React.useState(false);
   const [addCommitOpen, setAddCommitOpen] = React.useState(false);
   const [deployOpen, setDeployOpen] = React.useState(false);
-  
+
   // Form states for Save to Git
   const [repoName, setRepoName] = React.useState("");
   const [repoDescription, setRepoDescription] = React.useState("");
   const [gitCommitMessage, setGitCommitMessage] = React.useState("");
-  
+  const [isValidRepoName, setValidRepoName] = React.useState<boolean | null>(null);
+  const [isCheckingRepo, setIsCheckingRepo] = React.useState(false);
+  const debouncedRepoName = useDebounce(repoName, 1000);
+
   // Form states for Add Commit
   const [commitMessage, setCommitMessage] = React.useState("");
-  
+
   // Form states for Deploy
   const [deployProjectName, setDeployProjectName] = React.useState("");
   const [deployEnvironment, setDeployEnvironment] = React.useState("");
-  
+
+
+  React.useEffect(() => {
+    if (!debouncedRepoName.trim()) {
+      setValidRepoName(null);
+      return;
+    }
+
+    const validateRepo = async () => {
+      try {
+        setIsCheckingRepo(true)
+        const res = await apiClientWithAuth().get(
+          `git/validate/${debouncedRepoName}`
+        );
+        setValidRepoName(res.data.isAvialable);
+        console.log(res.data)
+      } catch (err) {
+        console.error(err);
+        setValidRepoName(null);
+      } finally {
+        setIsCheckingRepo(false);
+      }
+    };
+
+    validateRepo();
+  }, [debouncedRepoName]);
+
+
   function handleToggle() {
     setIframeLoaded(false);
     if (view === 5173) {
@@ -125,21 +157,21 @@ export function Preview({ className , iframeLoaded, setIframeLoaded }: {
         )}
         {view === 5173
           ? id && (
-              <iframe
-                loading="eager"
-                onLoad={() => setIframeLoaded(true)}
-                src={`https://${5173}-${id}.e2b.app`}
-                className="w-full h-full border-0"
-              />
-            )
+            <iframe
+              loading="eager"
+              onLoad={() => setIframeLoaded(true)}
+              src={`https://${5173}-${id}.e2b.app`}
+              className="w-full h-full border-0"
+            />
+          )
           : id && (
-              <iframe
-                loading="eager"
-                onLoad={() => setIframeLoaded(true)}
-                src={`https://${8080}-${id}.e2b.app`}
-                className="w-full h-full border-0"
-              />
-            )}
+            <iframe
+              loading="eager"
+              onLoad={() => setIframeLoaded(true)}
+              src={`https://${8080}-${id}.e2b.app`}
+              className="w-full h-full border-0"
+            />
+          )}
       </Card>
 
       {/* Save to Git Dialog */}
@@ -157,9 +189,25 @@ export function Preview({ className , iframeLoaded, setIframeLoaded }: {
               <Input
                 id="repoName"
                 value={repoName}
-                onChange={(e) => setRepoName(e.target.value)}
+                onChange={(e) => {
+                  setRepoName(e.target.value)
+                }}
                 placeholder="my-awesome-project"
               />
+              {isCheckingRepo && (
+                <Label className="text-sm text-muted-foreground">Checking availability...</Label>
+              )}
+              {!isCheckingRepo && isValidRepoName !== null && (
+                <Label
+                  className={
+                    "text-sm " +
+                    (isValidRepoName === true ? "text-green-500" : "text-destructive")
+                  }
+                  htmlFor="repoName"
+                >
+                  {isValidRepoName === true ? "Available" : "Not available"}
+                </Label>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="repoDescription">Description</Label>
@@ -185,10 +233,21 @@ export function Preview({ className , iframeLoaded, setIframeLoaded }: {
             <Button variant="outline" onClick={() => setSaveToGitOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              // Handle save to git logic here
-              console.log({ repoName, repoDescription, gitCommitMessage });
-              setSaveToGitOpen(false);
+            <Button disabled={isValidRepoName !== true || isCheckingRepo} onClick={async () => {
+              try {
+                console.log({
+                  repoName, repoDescription, gitCommitMessage
+                })
+                const res = await apiClientWithAuth().post('/git', {
+                  name: repoName,
+                  decription: repoDescription,
+                  commit: gitCommitMessage,
+                })
+                toast(res.data.msg)
+                setSaveToGitOpen(false);
+              } catch (e) {
+                console.log(e)
+              }
             }}>
               Create Repository
             </Button>
