@@ -12,6 +12,7 @@ import { SettingsSection } from "@/components/dashboard/settings-section";
 import { UserDetails } from "@/components/dashboard/user-details";
 import type { DashboardData, User } from "@/components/dashboard/types";
 import { Button } from "@/components/ui/button";
+import { CreateNewDialog } from "@/components/dashboard/create-new-dialog";
 import { useRouter } from "next/navigation";
 
 function useDashboardData() {
@@ -150,13 +151,14 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <Button
-              onClick={() => router.replace("/generate")}
-              className="w-full py-8 text-lg font-semibold transition-all hover:shadow-md active:scale-[0.99]"
-            >
-              <Sparkles className="mr-2 size-6" />
-              Create Website
-            </Button>
+            <CreateNewDialog
+              trigger={
+                <Button className="w-full py-8 text-lg font-semibold transition-all hover:shadow-md active:scale-[0.99]">
+                  <Sparkles className="mr-2 size-6" />
+                  Create New
+                </Button>
+              }
+            />
           </div>
         );
       case "profile":

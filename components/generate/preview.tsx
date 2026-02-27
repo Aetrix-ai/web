@@ -29,11 +29,13 @@ import "./preview.css";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounced-search";
 import { Spinner } from "../ui/spinner";
+import { useSearchParams } from "next/navigation";
 
-export function Preview({ className, iframeLoaded, setIframeLoaded }: {
+export function Preview({ className, iframeLoaded, setIframeLoaded, projectType }: {
   className?: string;
   iframeLoaded: boolean;
   setIframeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+  projectType: string
 }) {
   const [id, setID] = React.useState<string | null>(null);
   const [view, setView] = React.useState<8080 | 5173>(5173);
@@ -58,7 +60,7 @@ export function Preview({ className, iframeLoaded, setIframeLoaded }: {
   const [deployProjectName, setDeployProjectName] = React.useState("");
   const [deployEnvironment, setDeployEnvironment] = React.useState("");
 
-
+  console.log(projectType)
   React.useEffect(() => {
     if (!debouncedRepoName.trim()) {
       setValidRepoName(null);
@@ -94,29 +96,38 @@ export function Preview({ className, iframeLoaded, setIframeLoaded }: {
     }
   }
 
-  const [refresh , setRefresh] = React.useState(false)
+  const [refresh, setRefresh] = React.useState(false)
   async function handleRefresh() {
-     try{
+    try {
       setRefresh(true)
       setIframeLoaded(false)
-     
+
       const res = await apiClientWithAuth().get(SANDBOX_REFRESH)
-      
+
       toast(res.data.message)
-     }catch(e){
+    } catch (e) {
       console.log(e)
       toast("Unable to refresh")
-     }finally{
+    } finally {
       setRefresh(false)
       setIframeLoaded(true)
-     }
-  } 
+    }
+  }
+
+
+
+
+
   React.useEffect(() => {
     async function getSandboxUrl() {
+
+      if (projectType == "none") return
+
       try {
         const token = localStorage.getItem("token");
-        // intialize sandbox
-        const response = await apiClient.get("/ai/sandbox", {
+        // intialize sandbox load type from url
+        console.log("requesting sandbox url", projectType)
+        const response = await apiClient.get("/ai/sandbox/" + projectType, {
           headers: { Authorization: token },
         });
         sessionStorage.setItem("sandbox", response.data.sandbox);
@@ -129,7 +140,7 @@ export function Preview({ className, iframeLoaded, setIframeLoaded }: {
       }
     }
     getSandboxUrl();
-  }, []);
+  }, [projectType]);
 
   return (
     <div className={cn("relative h-full", !iframeLoaded && id && "p-1")}>
@@ -139,8 +150,8 @@ export function Preview({ className, iframeLoaded, setIframeLoaded }: {
       <Card className={cn("flex flex-col p-0 h-full overflow-hidden relative bg-background", className)}>
         <div className="flex gap-5 absolute top-5 right-5 z-50">
           <Button variant={"outline"} onClick={handleRefresh}>
-           
-            {refresh ? <Spinner/> :  <RotateCcw />}
+
+            {refresh ? <Spinner /> : <RotateCcw />}
           </Button>
           <Menubar className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <MenubarMenu>

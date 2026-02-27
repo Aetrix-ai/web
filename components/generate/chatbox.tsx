@@ -188,9 +188,11 @@ function useChatStream(
 export function Chatbox({
   className,
   LoadPreview,
+  projectType,
 }: {
   className?: string;
   LoadPreview: React.Dispatch<React.SetStateAction<boolean>>;
+  projectType?: string | null;
 }) {
   const [prompt, setPrompt] = React.useState<string>("");
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
@@ -217,16 +219,23 @@ export function Chatbox({
 
   // Initialize with welcome messages
   React.useEffect(() => {
+    const welcomeContent =
+      projectType === "portfolio"
+        ? "Hey! Let's build your **portfolio website**. Tell me about yourself — your skills, projects, and what you'd like to showcase!"
+        : projectType === "custom"
+          ? "Hey! Let's build your **custom web application**. What would you like to create today?"
+          : "Hey, how can I help you!";
+
     setMessages([
       {
         id: "2",
         role: "assistant",
-        content: "hey how can i help you!",
+        content: welcomeContent,
       },
     ]);
 
     getAvialableModels();
-  }, [setMessages]);
+  }, [setMessages, projectType]);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
