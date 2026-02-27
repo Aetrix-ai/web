@@ -1,9 +1,22 @@
 "use client";
 import * as React from "react";
-import { cn, FULL_AI_API_URL } from "@/lib/utils";
+import {
+  apiClientWithAuth,
+  AVIALBLE_MODELS,
+  cn,
+  FULL_AI_API_URL,
+} from "@/lib/utils";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { MessageInput } from "../ui/message-input";
 import { MessageList } from "../ui/message-list";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function useChatStream(
   LoadPreview: React.Dispatch<React.SetStateAction<boolean>>,
@@ -28,7 +41,7 @@ function useChatStream(
       let name = toolName.split("-").pop() || toolName;
       name = name.replace(/_/g, " ");
       name = name.charAt(0).toUpperCase() + name.slice(1);
-     
+
       if (status === "success") {
         return `> ✓⃝ **\`${name}\`**`;
       }
@@ -45,12 +58,12 @@ function useChatStream(
     }
 
     if (tool.status === "success") {
-      return getWrapTools(name, content, "success")  + "\n";
+      return getWrapTools(name, content, "success") + "\n";
     } else {
       return getWrapTools(name, content, "error") + "\n";
     }
   };
-  const startChat = async (prompt: string) => {
+  const startChat = async (prompt: string, modelName: string) => {
     const userMessageId = `${Date.now()}-user`;
     const assistantMessageId = `${Date.now()}-assistant`;
 
@@ -81,7 +94,7 @@ function useChatStream(
           "Content-Type": "application/json",
           ...(token && { Authorization: token }),
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, modelName }),
         signal: controllerRef.current.signal,
       });
 
@@ -115,7 +128,7 @@ function useChatStream(
             if (typeof content !== "string") continue;
             assistantContent += content;
             console.log("Parsed content chunk:", content);
-
+            assistantContent += "\n";
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMessageId
@@ -126,9 +139,10 @@ function useChatStream(
           } else if (parsed.tools) {
             for (const tool of parsed.tools) {
               console.log("Tool kwargs:", tool.kwargs);
+              assistantContent += "\n";
               assistantContent += wraptools(tool.kwargs);
               assistantContent += "\n";
-              
+
               // Add line break after each tool
               setMessages((prev) =>
                 prev.map((msg) =>
@@ -181,6 +195,23 @@ export function Chatbox({
   const [prompt, setPrompt] = React.useState<string>("");
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
+  const [models, setModels] = React.useState<string[]>([]);
+  const [model, setModel] = React.useState("");
+
+  async function getAvialableModels() {
+    try {
+      const res = await apiClientWithAuth().get(AVIALBLE_MODELS);
+      console.log(res.data);
+      const avl_models = res.data.models as string[];
+      const defaultModel = res.data.default;
+      console.log(avl_models , defaultModel)
+      setModels(avl_models);
+      setModel(defaultModel);
+    } catch (e: any) {
+      console.log(e);
+    }
+  }
+
   const { messages, setMessages, isGenerating, startChat, stopChat } =
     useChatStream(LoadPreview);
 
@@ -193,6 +224,8 @@ export function Chatbox({
         content: "hey how can i help you!",
       },
     ]);
+
+    getAvialableModels();
   }, [setMessages]);
 
   React.useEffect(() => {
@@ -205,11 +238,32 @@ export function Chatbox({
 
     const currentPrompt = prompt;
     setPrompt("");
-    startChat(currentPrompt);
+    startChat(currentPrompt, model);
   };
 
   return (
     <Card className={cn("flex p-0 flex-col h-full justify-between", className)}>
+      <div className="flex w-full justify-end ">
+        <Select
+          value={model}
+          onValueChange={(value) => {
+            setModel(value);
+          }}
+        >
+          <SelectTrigger className="w-full m-1">
+            <SelectValue placeholder="model" />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectGroup>
+              {models.map((model) => (
+                <SelectItem key={model} value={model}>
+                  {model}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
         <MessageList messages={messages} isTyping={isGenerating} />
         <div ref={messagesEndRef} />

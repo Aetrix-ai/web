@@ -28,6 +28,7 @@ export const PROJECT_API_URL = "/user/project";
 export const MEDIA_API_URL = "/media";
 export const AUTHENTICATE_MEDIA_UPLOAD_URL = "/media/authenticate-upload";
 export const AI_API_URL = "/ai";
+export const AVIALBLE_MODELS = "/ai/models"
 export const USER_API_URL = "/user";
 export const AUTH_API_URL = "/auth";
 
