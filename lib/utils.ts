@@ -32,4 +32,5 @@ export const AVIALBLE_MODELS = "/ai/models"
 export const USER_API_URL = "/user";
 export const AUTH_API_URL = "/auth";
 export const SANDBOX_REFRESH = "/ai/restart"
+export const PORTFOLIO_API_URL = "/user/portfolio"
 

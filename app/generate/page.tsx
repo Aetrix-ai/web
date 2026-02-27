@@ -1,10 +1,10 @@
 'use client'
 import { Chatbox } from "@/components/generate/chatbox"
 import { Preview } from "@/components/generate/preview"
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function GeneratePage() {
+function GeneratePageContent() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const searchParams = useSearchParams();
   const [projectType, setProjectType] = useState<string>("none");
@@ -33,6 +33,14 @@ export default function GeneratePage() {
         <Preview iframeLoaded={iframeLoaded} projectType={projectType} setIframeLoaded={setIframeLoaded} className="h-full rounded-t-none md:rounded-t-xl md:rounded-l-none" />
       </div>
     </div>
+  )
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense>
+      <GeneratePageContent />
+    </Suspense>
   )
 }
 

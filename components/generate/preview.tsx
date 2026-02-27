@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown, RotateCcw } from "lucide-react";
+import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown, RotateCcw, PowerOffIcon } from "lucide-react";
 import "./preview.css";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounced-search";
@@ -44,6 +44,7 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
   const [saveToGitOpen, setSaveToGitOpen] = React.useState(false);
   const [addCommitOpen, setAddCommitOpen] = React.useState(false);
   const [deployOpen, setDeployOpen] = React.useState(false);
+  const [killSandboxOpen, setKillSandboxOpen] = React.useState(false);
 
   // Form states for Save to Git
   const [repoName, setRepoName] = React.useState("");
@@ -115,7 +116,19 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
   }
 
 
+  //turn of back to dash bord, send request to backend
 
+
+  async function KillSandbox() {
+    try {
+      const res = await apiClientWithAuth().delete("/ai/sandbox");
+      toast(res.data.message);
+      window.location.href = "/dashboard";
+    } catch (e) {
+      console.error(e);
+      toast("Failed to kill sandbox");
+    }
+  }
 
 
   React.useEffect(() => {
@@ -149,6 +162,9 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
       )}
       <Card className={cn("flex flex-col p-0 h-full overflow-hidden relative bg-background", className)}>
         <div className="flex gap-5 absolute top-5 right-5 z-50">
+          <Button variant={"destructive"} className="bg-destructive" onClick={() => setKillSandboxOpen(true)}>
+            {refresh ? <Spinner /> : <PowerOffIcon />}
+          </Button>
           <Button variant={"outline"} onClick={handleRefresh}>
 
             {refresh ? <Spinner /> : <RotateCcw />}
@@ -364,6 +380,32 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
               setDeployOpen(false);
             }}>
               Deploy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Kill Sandbox Confirmation Dialog */}
+      <Dialog open={killSandboxOpen} onOpenChange={setKillSandboxOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Kill Sandbox</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to kill the sandbox? This will terminate your current session and redirect you to the dashboard. Any unsaved changes will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKillSandboxOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                setKillSandboxOpen(false);
+                await KillSandbox();
+              }}
+            >
+              Kill Sandbox
             </Button>
           </DialogFooter>
         </DialogContent>
