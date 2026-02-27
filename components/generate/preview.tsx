@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 
-import { apiClient, apiClientWithAuth, cn } from "@/lib/utils";
+import { apiClient, apiClientWithAuth, cn, SANDBOX_REFRESH } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "../ui/button";
 import { SiriLoading } from "@/components/ui/siri-loading";
@@ -24,10 +24,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown } from "lucide-react";
+import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown, RotateCcw } from "lucide-react";
 import "./preview.css";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounced-search";
+import { Spinner } from "../ui/spinner";
 
 export function Preview({ className, iframeLoaded, setIframeLoaded }: {
   className?: string;
@@ -92,6 +93,24 @@ export function Preview({ className, iframeLoaded, setIframeLoaded }: {
       setView(5173);
     }
   }
+
+  const [refresh , setRefresh] = React.useState(false)
+  async function handleRefresh() {
+     try{
+      setRefresh(true)
+      setIframeLoaded(false)
+     
+      const res = await apiClientWithAuth().get(SANDBOX_REFRESH)
+      
+      toast(res.data.message)
+     }catch(e){
+      console.log(e)
+      toast("Unable to refresh")
+     }finally{
+      setRefresh(false)
+      setIframeLoaded(true)
+     }
+  } 
   React.useEffect(() => {
     async function getSandboxUrl() {
       try {
@@ -118,7 +137,11 @@ export function Preview({ className, iframeLoaded, setIframeLoaded }: {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 via-blue-500 via-cyan-500 to-purple-500 rounded-lg animate-gradient-flow"></div>
       )}
       <Card className={cn("flex flex-col p-0 h-full overflow-hidden relative bg-background", className)}>
-        <div className="absolute top-5 right-5 z-50">
+        <div className="flex gap-5 absolute top-5 right-5 z-50">
+          <Button variant={"outline"} onClick={handleRefresh}>
+           
+            {refresh ? <Spinner/> :  <RotateCcw />}
+          </Button>
           <Menubar className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <MenubarMenu>
               <MenubarTrigger className="cursor-pointer">
