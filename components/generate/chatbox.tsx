@@ -174,6 +174,13 @@ function useChatStream(
     } finally {
       setIsGenerating(false);
       LoadPreview(true);
+      // Trigger iframe reload after chat completes
+      const globalWindow = window as typeof window & { __reloadPreviewIframe?: () => void };
+      if (globalWindow.__reloadPreviewIframe) {
+        setTimeout(() => {
+          globalWindow.__reloadPreviewIframe?.();
+        }, 500);
+      }
     }
   };
 
@@ -189,10 +196,12 @@ export function Chatbox({
   className,
   LoadPreview,
   projectType,
+  onChatComplete,
 }: {
   className?: string;
   LoadPreview: React.Dispatch<React.SetStateAction<boolean>>;
   projectType?: string | null;
+  onChatComplete?: () => void;
 }) {
   const [prompt, setPrompt] = React.useState<string>("");
   const messagesEndRef = React.useRef<HTMLDivElement>(null);

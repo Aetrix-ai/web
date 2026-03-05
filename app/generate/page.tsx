@@ -30,7 +30,7 @@ function GeneratePageContent() {
 
       {/* Right side - Preview (3 parts) */}
       <div className="w-full md:w-3/4 h-2/3 md:h-full">
-        <Preview iframeLoaded={iframeLoaded} projectType={projectType} setIframeLoaded={setIframeLoaded} className="h-full rounded-t-none md:rounded-t-xl md:rounded-l-none" />
+        <Preview iframeLoaded={iframeLoaded} projectType={projectType} setIframeLoaded={setIframeLoaded} onReloadIframe={() => {}} className="h-full rounded-t-none md:rounded-t-xl md:rounded-l-none" />
       </div>
     </div>
   )

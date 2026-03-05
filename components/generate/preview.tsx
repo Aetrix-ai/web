@@ -24,21 +24,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown, RotateCcw, PowerOffIcon } from "lucide-react";
+import { Code, Menu, GitBranch, GitCommit, Rocket, ChevronDown, RotateCcw, PowerOffIcon, Copy, ExternalLink } from "lucide-react";
 import "./preview.css";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounced-search";
 import { Spinner } from "../ui/spinner";
 import { useSearchParams } from "next/navigation";
 
-export function Preview({ className, iframeLoaded, setIframeLoaded, projectType }: {
+export function Preview({ className, iframeLoaded, setIframeLoaded, projectType, onReloadIframe }: {
   className?: string;
   iframeLoaded: boolean;
   setIframeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
-  projectType: string
+  projectType: string;
+  onReloadIframe?: () => void;
 }) {
   const [id, setID] = React.useState<string | null>(null);
   const [view, setView] = React.useState<8080 | 5173>(5173);
+  const [iframeKey, setIframeKey] = React.useState(0);
 
   // Dialog states
   const [saveToGitOpen, setSaveToGitOpen] = React.useState(false);
@@ -115,6 +117,18 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
     }
   }
 
+  const reloadIframe = React.useCallback(() => {
+    setIframeLoaded(false);
+    setIframeKey(prev => prev + 1);
+  }, [setIframeLoaded]);
+
+  React.useEffect(() => {
+    if (onReloadIframe) {
+      // Expose the reload function to parent
+      (window as typeof window & { __reloadPreviewIframe?: () => void }).__reloadPreviewIframe = reloadIframe;
+    }
+  }, [onReloadIframe, reloadIframe]);
+
 
   //turn of back to dash bord, send request to backend
 
@@ -128,6 +142,25 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
       console.error(e);
       toast("Failed to kill sandbox");
     }
+  }
+
+  function copyReactUrl() {
+    if (!id) {
+      toast("Sandbox not ready yet");
+      return;
+    }
+    const url = `https://${view}-${id}.e2b.app`;
+    navigator.clipboard.writeText(url);
+    toast("URL copied to clipboard");
+  }
+
+  function openInNewTab() {
+    if (!id) {
+      toast("Sandbox not ready yet");
+      return;
+    }
+    const url = `https://${view}-${id}.e2b.app`;
+    window.open(url, "_blank");
   }
 
 
@@ -182,6 +215,15 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
                   {view === 5173 ? "Switch to Code Preview" : "Switch to React Sandbox"}
                 </MenubarItem>
                 <MenubarSeparator />
+                <MenubarItem onClick={copyReactUrl}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy URL
+                </MenubarItem>
+                <MenubarItem onClick={openInNewTab}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open in New Tab
+                </MenubarItem>
+                <MenubarSeparator />
                 <MenubarItem onClick={() => setSaveToGitOpen(true)}>
                   <GitBranch className="h-4 w-4 mr-2" />
                   Save to Github
@@ -208,6 +250,7 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
         {view === 5173
           ? id && (
             <iframe
+              key={`iframe-5173-${iframeKey}`}
               loading="eager"
               onLoad={() => setIframeLoaded(true)}
               src={`https://${5173}-${id}.e2b.app`}
@@ -216,6 +259,7 @@ export function Preview({ className, iframeLoaded, setIframeLoaded, projectType 
           )
           : id && (
             <iframe
+              key={`iframe-8080-${iframeKey}`}
               loading="eager"
               onLoad={() => setIframeLoaded(true)}
               src={`https://${8080}-${id}.e2b.app`}
