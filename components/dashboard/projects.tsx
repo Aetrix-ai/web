@@ -278,11 +278,11 @@ export function Projects() {
                  * */ }
 
 
-                  <Badge variant={
+                  {/* <Badge variant={
                   getRandom()[0] as "default" | "secondary" | "destructive"
                 } className="capitalize">
                     {getRandom()[1]}
-                  </Badge>
+                  </Badge> */}
 
               </div>
               <CardTitle className="line-clamp-1">{project.title}</CardTitle>
